@@ -1,0 +1,11 @@
+*.
+csv
+*.xlsx
+__pycache__/
+*.pyc
+venv/
+env/
+.env
+
+frontend/node_modules/
+

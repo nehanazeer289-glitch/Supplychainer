@@ -88,6 +88,17 @@ class RouteRecommender:
             try:
                 # Build Persona Graph (Applying STRICT constraints)
                 G_p = self.unified_graph.copy()
+
+
+                # Remove nodes blocked by the active scenario
+                for blocked_node in disruptions:
+                    nodes_to_remove = [
+                        n for n, d in G_p.nodes(data=True)
+                        if d.get("physical_id") == blocked_node
+                    ]
+                    G_p.remove_nodes_from(nodes_to_remove)
+
+
                 
                 # Apply Hub Avoidance (Prune all virtual nodes for the hub)
                 for hub_id in avoid_hubs:
@@ -111,10 +122,22 @@ class RouteRecommender:
                     # Intelligence Factor (Mapped to physical node)
                     v_data = G_p.nodes[v]
                     p_id = v_data.get("physical_id")
+                    print("DEBUG NODE:", v, "PHYSICAL:", p_id)
                     
                     threat = d.get("base_threat", 0.05)
-                    delay = 0
-                    
+
+                    # p85 worst-case delay from the trained risk model
+                    origin_id = G_p.nodes[u].get("physical_id", u)
+                    destination_id = G_p.nodes[v].get("physical_id", v)
+
+                    p85_result = self.predictor.predict_worst_case_delay(
+                        origin=origin_id,
+                        destination=destination_id,
+                        transport_mode=mode,
+                        nlp_score=threat
+                    )
+
+                    delay = p85_result.get("final_delay_presented", 0.0)
                     if p_id in disruptions:
                         threat = max(threat, disruptions[p_id]["threat"])
                         delay += disruptions[p_id]["delay"]
@@ -199,7 +222,7 @@ class RouteRecommender:
                     "total_cost": round(total_cost, 2),
                     "threat_level": round(max_threat, 2),
                     "audit_trace": trace,
-                    "explanation": self._generate_forensic_explanation(persona, trace, max_threat),
+                    "explanation": "",
                     "override_applied": bool(avoid_hubs or cost_ceiling < 999999)
                 })
 
@@ -210,7 +233,27 @@ class RouteRecommender:
 
         if not candidates:
             return {"error": "No valid multimodal route établi under current strategic constraints."}
+        # Generate final explanations after all candidates are available
+        fastest_cost = next(
+            (c["total_cost"] for c in candidates if c["persona"] == "FASTEST"),
+            None
+        )
 
+        for c in candidates:
+            if c["persona"] == "BALANCED" and fastest_cost and fastest_cost > 0:
+                balanced_cost = c["total_cost"]
+                cost_reduction = (1 - (balanced_cost / fastest_cost)) * 100
+                c["explanation"] = (
+                    f"Economic-optimized. Multimodal balance reduces total landed cost "
+                    f"by {round(cost_reduction, 1)}% vs premium express AIR, "
+                    f"while maintaining defensible lead times."
+                )
+            else:
+                c["explanation"] = self._generate_forensic_explanation(
+                    c["persona"],
+                    c["audit_trace"],
+                    c["threat_level"]
+                )
         # Deduplicate and sort
         final = []
         seen = set()
@@ -231,7 +274,6 @@ class RouteRecommender:
         Generates quantitative, decision-defensible explanations as required by TEST 5.
         """
         eta = trace["eta"]["transit"] + trace["eta"]["transfer"] + trace["eta"]["scenario"]
-        cost = trace["cost"]["transit"] + trace["cost"]["transfer"] + trace["cost"]["scenario"]
         transfer_count = round(trace["eta"]["transfer"] / 4.0) # Approx transfers
         
         if persona == "FASTEST":
@@ -239,4 +281,4 @@ class RouteRecommender:
         elif persona == "SAFEST":
              return f"Resilience-optimized. Path selection reduces risk exposure by {round((1.0 - threat)*100)}% by bypassing volatile corridors. Lead-time integrity prioritized over cost."
         else:
-             return f"Economic-optimized. Multimodal balance reduces total landed cost by {round(cost*0.15)}% vs premium express AIR, while maintaining defensible lead times."
+            return "Economic-optimized. Multimodal balance prioritizes cost efficiency while maintaining defensible lead times."

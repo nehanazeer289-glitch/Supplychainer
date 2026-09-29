@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import BenchmarkCharts from './BenchmarkCharts.jsx';
 import RouteRecommender from './RouteRecommender.jsx';
 import SupplierIntelligence from './SupplierIntelligence.jsx';
+import GlobalNetworkMap from './GlobalNetworkMap.jsx';
 
 export default function App() {
   const [network, setNetwork] = useState({ nodes: [], edges: [] });
@@ -34,7 +35,11 @@ export default function App() {
   }
 
   if (currentView === 'benchmark') {
-    return <BenchmarkCharts onBack={() => setCurrentView('recommend')} />;
+    return <BenchmarkCharts onBack={() => setCurrentView('recommend')} onNavigate={setCurrentView} />;
+  }
+
+  if (currentView === 'network') {
+    return <GlobalNetworkMap onNavigate={setCurrentView} />;
   }
 
   return (
@@ -62,6 +67,9 @@ export default function App() {
         <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: 'auto'}}>
           <button className="dispatch-btn" onClick={() => setCurrentView('recommend')}>
             Return to Optimization Dashboard
+          </button>
+          <button className="dispatch-btn" style={{backgroundColor: '#0ea5e9'}} onClick={() => setCurrentView('network')}>
+            Explore Global Network Map
           </button>
           <button className="benchmark-btn" onClick={() => setCurrentView('benchmark')}>
             View Scientific Benchmarks

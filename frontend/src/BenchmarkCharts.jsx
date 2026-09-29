@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, Cell
 } from 'recharts';
-import { ArrowLeft, TrendingDown, AlertTriangle, DollarSign, Shield, Zap } from 'lucide-react';
+import { 
+  ArrowLeft, TrendingDown, AlertTriangle, DollarSign, Shield, Zap, 
+  Globe, ShieldCheck, BarChart3, Activity, Info, CheckCircle2, Layers 
+} from 'lucide-react';
 
 const COLORS = {
   aggressive: '#ef4444',
@@ -67,19 +70,12 @@ const BENCHMARK_DATA = {
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{
-      background: 'rgba(15, 23, 42, 0.95)',
-      border: '1px solid rgba(255,255,255,0.15)',
-      borderRadius: 8,
-      padding: '10px 14px',
-      color: '#f0f4f8',
-      fontSize: '0.85rem',
-      backdropFilter: 'blur(8px)'
-    }}>
-      <div style={{ fontWeight: 600, marginBottom: 4 }}>{label}</div>
+    <div className="bench-custom-tooltip">
+      <div style={{ fontWeight: 800, marginBottom: 4, color: '#f8fafc', fontSize: '0.8rem' }}>{label}</div>
       {payload.map((entry, i) => (
-        <div key={i} style={{ color: entry.color || entry.fill, marginTop: 2 }}>
-          {entry.name}: {entry.value}
+        <div key={i} style={{ color: entry.color || entry.fill, marginTop: 3, display: 'flex', justifyContent: 'space-between', gap: '1rem', fontSize: '0.75rem', fontFamily: 'JetBrains Mono' }}>
+          <span>{entry.name}:</span>
+          <strong>{entry.value}{entry.unit || ''}</strong>
         </div>
       ))}
     </div>
@@ -89,7 +85,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 function StatCard({ icon: Icon, label, value, subtext, accent }) {
   return (
     <div className="bench-stat-card">
-      <div className="bench-stat-icon" style={{ color: accent }}>
+      <div className="bench-stat-icon" style={{ color: accent, borderColor: `${accent}40` }}>
         <Icon size={20} />
       </div>
       <div className="bench-stat-content">
@@ -101,12 +97,15 @@ function StatCard({ icon: Icon, label, value, subtext, accent }) {
   );
 }
 
-function ChartCard({ title, subtitle, children }) {
+function ChartCard({ title, subtitle, badge, children }) {
   return (
     <div className="bench-chart-card">
       <div className="bench-chart-header">
-        <h3 className="bench-chart-title">{title}</h3>
-        {subtitle && <p className="bench-chart-subtitle">{subtitle}</p>}
+        <div>
+          <h3 className="bench-chart-title">{title}</h3>
+          {subtitle && <p className="bench-chart-subtitle">{subtitle}</p>}
+        </div>
+        {badge && <span className="bench-chart-badge">{badge}</span>}
       </div>
       <div className="bench-chart-body">
         {children}
@@ -115,72 +114,113 @@ function ChartCard({ title, subtitle, children }) {
   );
 }
 
-export default function BenchmarkCharts({ onBack }) {
+export default function BenchmarkCharts({ onBack, onNavigate }) {
+  const handleNav = (view) => {
+    if (onNavigate) onNavigate(view);
+    else if (onBack) onBack();
+  };
+
   return (
-    <div className="bench-container">
-      {/* Header */}
-      <div className="bench-header">
+    <div className="bench-container animate-fade-in">
+      {/* Executive Header */}
+      <header className="bench-header">
         <div className="bench-header-left">
-          <button className="bench-back-btn" onClick={onBack}>
-            <ArrowLeft size={18} />
-            <span>Dashboard</span>
+          <button 
+            className="sc-badge-active" 
+            onClick={() => handleNav('recommend')}
+            style={{ cursor: 'pointer', borderColor: 'var(--border-slate)' }}
+            title="Return to Route Optimization Console"
+          >
+            <ArrowLeft size={14} /> COMMAND CONSOLE
           </button>
-          <div>
-            <h1 className="bench-title">5-Way Benchmark Results</h1>
-            <p className="bench-subtitle">500 dispatches · 59 interventions · identical disruption scenarios</p>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div className="map-header-icon-box">
+              <BarChart3 size={22} color="#10b981" />
+            </div>
+            <div>
+              <h1 className="bench-title">5-Way Decision Superiority Benchmarks</h1>
+              <p className="bench-subtitle">
+                500 DISPATCHES · 59 INTERVENTIONS · OR-TOOLS BASELINE VS ML QUANTILE AGENTS
+              </p>
+            </div>
           </div>
         </div>
-        <div className="bench-header-badge">
-          <Shield size={16} />
-          <span>ML Accuracy: 91%</span>
-        </div>
-      </div>
 
-      {/* Top KPI Cards */}
-      <div className="bench-stats-row">
+        {/* Global Navigation Badges */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+          <button 
+            className="sc-badge-active" 
+            onClick={() => handleNav('network')} 
+            style={{ cursor: 'pointer', borderColor: '#3b82f6', color: '#3b82f6' }}
+            title="Open Interactive Global Network Map"
+          >
+            <Globe size={14} /> GLOBAL NETWORK MAP
+          </button>
+          <button 
+            className="sc-badge-active" 
+            onClick={() => handleNav('suppliers')} 
+            style={{ cursor: 'pointer', borderColor: '#8b5cf6', color: '#8b5cf6' }}
+            title="Open Supplier Intelligence Audit"
+          >
+            <ShieldCheck size={14} /> SUPPLIER INTELLIGENCE
+          </button>
+          <div className="bench-header-badge">
+            <Shield size={14} color="#10b981" />
+            <span>ML ACCURACY: 91%</span>
+          </div>
+        </div>
+      </header>
+
+      {/* Top KPI Cards Row */}
+      <section className="bench-stats-row">
         <StatCard
           icon={Zap}
           label="Confidence Net Gain"
           value="+0.21%"
-          subtext="The only model to outperform baseline"
+          subtext="Only model to statistically beat baseline"
           accent="#3b82f6"
         />
         <StatCard
           icon={AlertTriangle}
           label="Aggressive Failure Rate"
           value="74.2%"
-          subtext="23 out of 31 reroutes failed"
+          subtext="23 out of 31 reroutes made delay worse"
           accent="#ef4444"
         />
         <StatCard
           icon={TrendingDown}
           label="Confidence Success Rate"
           value="45.4%"
-          subtext="Elite precision in risk-based routing"
+          subtext="Selective p85 risk thresholding"
           accent="#10b981"
         />
         <StatCard
           icon={DollarSign}
           label="Confidence Cost Increase"
           value="1.8%"
-          subtext="vs 5.2% for OR-Tools baseline"
-          accent="#3b82f6"
+          subtext="vs 5.2% for OR-Tools static baseline"
+          accent="#38bdf8"
         />
-      </div>
+      </section>
 
-      {/* Charts Grid */}
-      <div className="bench-charts-grid">
+      {/* Main Charts Grid: 2x2 Bar Charts */}
+      <section className="bench-charts-grid">
         {/* Reroute Volume */}
-        <ChartCard title="Reroute Volume" subtitle="Total reroutes triggered per strategy">
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={BENCHMARK_DATA.reroutes} barSize={40}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-              <XAxis dataKey="name" tick={{ fill: '#8b9bb4', fontSize: 12 }} axisLine={false} />
-              <YAxis tick={{ fill: '#8b9bb4', fontSize: 12 }} axisLine={false} />
+        <ChartCard 
+          title="Reroute Trigger Volume" 
+          subtitle="Total algorithmic interventions across 500 dispatches"
+          badge="TOTALS"
+        >
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={BENCHMARK_DATA.reroutes} barSize={36} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={{ stroke: '#1e293b' }} tickLine={false} />
+              <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={{ stroke: '#1e293b' }} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                 {BENCHMARK_DATA.reroutes.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} fillOpacity={0.85} />
+                  <Cell key={i} fill={entry.color} fillOpacity={0.88} />
                 ))}
               </Bar>
             </BarChart>
@@ -188,16 +228,20 @@ export default function BenchmarkCharts({ onBack }) {
         </ChartCard>
 
         {/* Success Rate */}
-        <ChartCard title="Reroute Success Rate (%)" subtitle="Percentage of reroutes that improved delivery time">
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={BENCHMARK_DATA.successRate} barSize={40}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-              <XAxis dataKey="name" tick={{ fill: '#8b9bb4', fontSize: 12 }} axisLine={false} />
-              <YAxis tick={{ fill: '#8b9bb4', fontSize: 12 }} axisLine={false} domain={[0, 40]} />
+        <ChartCard 
+          title="Intervention Success Rate (%)" 
+          subtitle="Percentage of reroutes that successfully improved delivery ETA"
+          badge="PRECISION"
+        >
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={BENCHMARK_DATA.successRate} barSize={36} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={{ stroke: '#1e293b' }} tickLine={false} />
+              <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={{ stroke: '#1e293b' }} tickLine={false} domain={[0, 60]} />
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                 {BENCHMARK_DATA.successRate.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} fillOpacity={0.85} />
+                  <Cell key={i} fill={entry.color} fillOpacity={0.88} />
                 ))}
               </Bar>
             </BarChart>
@@ -205,16 +249,20 @@ export default function BenchmarkCharts({ onBack }) {
         </ChartCard>
 
         {/* Worse Outcomes */}
-        <ChartCard title="Worse Outcomes" subtitle="Reroutes that resulted in longer delivery than baseline">
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={BENCHMARK_DATA.worseOutcomes} barSize={40}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-              <XAxis dataKey="name" tick={{ fill: '#8b9bb4', fontSize: 12 }} axisLine={false} />
-              <YAxis tick={{ fill: '#8b9bb4', fontSize: 12 }} axisLine={false} />
+        <ChartCard 
+          title="Detour Casualties (Worse Outcomes)" 
+          subtitle="Reroutes that generated longer delivery times than staying the course"
+          badge="RISK"
+        >
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={BENCHMARK_DATA.worseOutcomes} barSize={36} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={{ stroke: '#1e293b' }} tickLine={false} />
+              <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={{ stroke: '#1e293b' }} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                 {BENCHMARK_DATA.worseOutcomes.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} fillOpacity={0.85} />
+                  <Cell key={i} fill={entry.color} fillOpacity={0.88} />
                 ))}
               </Bar>
             </BarChart>
@@ -222,55 +270,66 @@ export default function BenchmarkCharts({ onBack }) {
         </ChartCard>
 
         {/* Cost Increase */}
-        <ChartCard title="Average Cost Increase (%)" subtitle="Additional routing cost vs baseline">
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={BENCHMARK_DATA.costIncrease} barSize={40}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-              <XAxis dataKey="name" tick={{ fill: '#8b9bb4', fontSize: 12 }} axisLine={false} />
-              <YAxis tick={{ fill: '#8b9bb4', fontSize: 12 }} axisLine={false} domain={[0, 6]} />
+        <ChartCard 
+          title="Average Cost Overhead (%)" 
+          subtitle="Additional freight premium incurred per strategy vs static baseline"
+          badge="EFFICIENCY"
+        >
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={BENCHMARK_DATA.costIncrease} barSize={36} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={{ stroke: '#1e293b' }} tickLine={false} />
+              <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={{ stroke: '#1e293b' }} tickLine={false} domain={[0, 6]} />
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                 {BENCHMARK_DATA.costIncrease.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} fillOpacity={0.85} />
+                  <Cell key={i} fill={entry.color} fillOpacity={0.88} />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
-      </div>
+      </section>
 
-      {/* Radar Chart — Full Width */}
-      <ChartCard title="Strategy Comparison Radar" subtitle="Normalized performance across 5 dimensions (higher = better)">
-        <ResponsiveContainer width="100%" height={380}>
-          <RadarChart data={BENCHMARK_DATA.radar} cx="50%" cy="50%" outerRadius="72%">
-            <PolarGrid stroke="rgba(255,255,255,0.1)" />
-            <PolarAngleAxis dataKey="metric" tick={{ fill: '#8b9bb4', fontSize: 12 }} />
-            <PolarRadiusAxis tick={false} axisLine={false} domain={[0, 100]} />
-            <Radar name="Aggressive" dataKey="Aggressive" stroke={COLORS.aggressive} fill={COLORS.aggressive} fillOpacity={0.15} strokeWidth={2} />
-            <Radar name="Conservative" dataKey="Conservative" stroke={COLORS.conservative} fill={COLORS.conservative} fillOpacity={0.15} strokeWidth={2} />
-            <Radar name="Confidence" dataKey="Confidence" stroke={COLORS.confidence} fill={COLORS.confidence} fillOpacity={0.2} strokeWidth={2.5} />
-            <Radar name="OR-Tools" dataKey="OR-Tools" stroke={COLORS.ortools} fill={COLORS.ortools} fillOpacity={0.15} strokeWidth={2} />
-            <Legend
-              wrapperStyle={{ fontSize: 12, color: '#8b9bb4', paddingTop: 16 }}
-            />
-            <Tooltip content={<CustomTooltip />} />
-          </RadarChart>
-        </ResponsiveContainer>
-      </ChartCard>
+      {/* Full-Width Strategy Radar Comparison */}
+      <section>
+        <ChartCard 
+          title="Multi-Dimensional Strategy Performance Radar" 
+          subtitle="Normalized scores across 5 core operational vectors (higher value = superior performance)"
+          badge="PENTAGON EVALUATION"
+        >
+          <ResponsiveContainer width="100%" height={360}>
+            <RadarChart data={BENCHMARK_DATA.radar} cx="50%" cy="50%" outerRadius="75%">
+              <PolarGrid stroke="rgba(255,255,255,0.08)" />
+              <PolarAngleAxis dataKey="metric" tick={{ fill: '#cbd5e1', fontSize: 12, fontWeight: 600 }} />
+              <PolarRadiusAxis tick={false} axisLine={false} domain={[0, 100]} />
+              <Radar name="Aggressive ML" dataKey="Aggressive" stroke={COLORS.aggressive} fill={COLORS.aggressive} fillOpacity={0.12} strokeWidth={2} />
+              <Radar name="Conservative" dataKey="Conservative" stroke={COLORS.conservative} fill={COLORS.conservative} fillOpacity={0.12} strokeWidth={2} />
+              <Radar name="Confidence-Weighted" dataKey="Confidence" stroke={COLORS.confidence} fill={COLORS.confidence} fillOpacity={0.25} strokeWidth={2.5} />
+              <Radar name="OR-Tools Static" dataKey="OR-Tools" stroke={COLORS.ortools} fill={COLORS.ortools} fillOpacity={0.12} strokeWidth={2} />
+              <Legend
+                wrapperStyle={{ fontSize: 12, color: '#94a3b8', paddingTop: 18 }}
+              />
+              <Tooltip content={<CustomTooltip />} />
+            </RadarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </section>
 
-      {/* Key Insight Panel */}
-      <div className="bench-insight-panel">
+      {/* Key Finding: The Over-Correction Problem */}
+      <section className="bench-insight-panel">
         <div className="bench-insight-icon">💡</div>
         <div>
-          <h3 className="bench-insight-title">Key Finding: The Over-Correction Problem</h3>
+          <h3 className="bench-insight-title">Executive Takeaway: The Over-Correction Trap</h3>
           <p className="bench-insight-text">
-            The OR-Tools baseline attempted the most reroutes (43) but achieved the worst success rate (9.3%) and highest cost increase (5.2%).
-            The Aggressive ML optimizer triggered 31 reroutes but made things worse 74% of the time, proving that over-correction is a structural risk.
-            The Conservative strategy proves that selective intervention (2 reroutes, 50% success) minimizes harm but lacks optimization power.
-            The Confidence-Weighted approach (+0.21% gain) provides the definitive solution — successfully dodging disruptions while avoiding the "butterfly-effect" costs of excessive detours.
+            The <strong>OR-Tools baseline</strong> attempted the most reroutes (43) but produced the lowest success rate (9.3%) and the highest cost premium (5.2%).
+            Similarly, an unconstrained <strong>Aggressive ML optimizer</strong> triggered 31 reroutes with a 74.2% failure rate, proving that indiscriminate detour recommendations compound delays across downstream transfer nodes.
+          </p>
+          <p className="bench-insight-text" style={{ marginTop: '0.5rem' }}>
+            The <strong>Confidence-Weighted model (+0.21% net gain)</strong> represents the definitive mathematical optimum: selective intervention that only triggers reroutes when predicted p85 risk outweighs transfer friction, successfully avoiding the costly butterfly effect of unnecessary detours.
           </p>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

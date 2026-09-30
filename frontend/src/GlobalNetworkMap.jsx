@@ -49,6 +49,13 @@ const HUB_CONFIG = {
     icon: Train,
     bgBadge: 'rgba(168, 85, 247, 0.15)'
   },
+  rail_hub: {
+    label: 'Freight Rail Hub',
+    color: '#c084fc',
+    border: '#e9d5ff',
+    icon: Train,
+    bgBadge: 'rgba(192, 132, 252, 0.15)'
+  },
   distribution_hub: {
     label: 'Distribution Hub',
     color: '#10b981',
@@ -311,6 +318,14 @@ export default function GlobalNetworkMap({ onNavigate }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
           <button 
             className="sc-badge-active" 
+            onClick={() => onNavigate('map-routing')} 
+            style={{ cursor: 'pointer', borderColor: '#38bdf8', color: '#38bdf8' }}
+            title="Open Interactive Multimodal Route Visualizer"
+          >
+            <Navigation size={14} /> ROUTE VISUALIZER
+          </button>
+          <button 
+            className="sc-badge-active" 
             onClick={() => onNavigate('suppliers')} 
             style={{ cursor: 'pointer', borderColor: '#8b5cf6', color: '#8b5cf6' }}
             title="Open Supplier Intelligence Audit"
@@ -364,6 +379,7 @@ export default function GlobalNetworkMap({ onNavigate }) {
             <option value="port">Maritime Ports</option>
             <option value="choke_point">Strategic Chokepoints</option>
             <option value="rail_terminal">Rail Terminals</option>
+            <option value="rail_hub">Rail Hubs</option>
             <option value="distribution_hub">Distribution Hubs</option>
           </select>
         </div>

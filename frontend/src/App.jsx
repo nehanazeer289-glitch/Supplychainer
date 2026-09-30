@@ -3,11 +3,20 @@ import BenchmarkCharts from './BenchmarkCharts.jsx';
 import RouteRecommender from './RouteRecommender.jsx';
 import SupplierIntelligence from './SupplierIntelligence.jsx';
 import GlobalNetworkMap from './GlobalNetworkMap.jsx';
+import MapRoutingView from './map/MapRoutingView.jsx';
 
 export default function App() {
   const [network, setNetwork] = useState({ nodes: [], edges: [] });
   const [status, setStatus] = useState(null);
   const [currentView, setCurrentView] = useState('recommend');
+  const [routeHandoff, setRouteHandoff] = useState(null);
+
+  const handleNavigate = (view, payload = null) => {
+    if (payload) {
+      setRouteHandoff(payload);
+    }
+    setCurrentView(view);
+  };
   
   useEffect(() => {
     fetch('/api/network')
@@ -27,19 +36,30 @@ export default function App() {
   }, []);
 
   if (currentView === 'recommend') {
-    return <RouteRecommender onNavigate={setCurrentView} />;
+    return <RouteRecommender onNavigate={handleNavigate} />;
   }
 
   if (currentView === 'suppliers') {
-    return <SupplierIntelligence onNavigate={setCurrentView} />;
+    return <SupplierIntelligence onNavigate={handleNavigate} />;
   }
 
   if (currentView === 'benchmark') {
-    return <BenchmarkCharts onBack={() => setCurrentView('recommend')} onNavigate={setCurrentView} />;
+    return <BenchmarkCharts onBack={() => handleNavigate('recommend')} onNavigate={handleNavigate} />;
   }
 
   if (currentView === 'network') {
-    return <GlobalNetworkMap onNavigate={setCurrentView} />;
+    return <GlobalNetworkMap onNavigate={handleNavigate} />;
+  }
+
+  if (currentView === 'map-routing') {
+    return (
+      <MapRoutingView 
+        recommendations={routeHandoff?.recommendations}
+        selectedPersona={routeHandoff?.selectedPersona || 'BALANCED'}
+        activeScenario={routeHandoff?.scenario || 'NORMAL'}
+        onNavigate={handleNavigate} 
+      />
+    );
   }
 
   return (
@@ -65,16 +85,19 @@ export default function App() {
         </div>
         
         <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: 'auto'}}>
-          <button className="dispatch-btn" onClick={() => setCurrentView('recommend')}>
+          <button className="dispatch-btn" onClick={() => handleNavigate('recommend')}>
             Return to Optimization Dashboard
           </button>
-          <button className="dispatch-btn" style={{backgroundColor: '#0ea5e9'}} onClick={() => setCurrentView('network')}>
+          <button className="dispatch-btn" style={{backgroundColor: '#0ea5e9'}} onClick={() => handleNavigate('network')}>
             Explore Global Network Map
           </button>
-          <button className="benchmark-btn" onClick={() => setCurrentView('benchmark')}>
+          <button className="dispatch-btn" style={{backgroundColor: '#0284c7'}} onClick={() => handleNavigate('map-routing')}>
+            Open Multimodal Route Visualizer
+          </button>
+          <button className="benchmark-btn" onClick={() => handleNavigate('benchmark')}>
             View Scientific Benchmarks
           </button>
-          <button className="dispatch-btn" style={{marginTop: '0.75rem', backgroundColor: '#8b5cf6'}} onClick={() => setCurrentView('suppliers')}>
+          <button className="dispatch-btn" style={{marginTop: '0.75rem', backgroundColor: '#8b5cf6'}} onClick={() => handleNavigate('suppliers')}>
             Execute Supplier Intelligence Audit
           </button>
         </div>

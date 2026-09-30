@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import { 
   ArrowLeft, TrendingDown, AlertTriangle, DollarSign, Shield, Zap, 
-  Globe, ShieldCheck, BarChart3, Activity, Info, CheckCircle2, Layers 
+  Globe, ShieldCheck, BarChart3, Activity, Info, CheckCircle2, Layers, Navigation 
 } from 'lucide-react';
 
 const COLORS = {
@@ -156,6 +156,14 @@ export default function BenchmarkCharts({ onBack, onNavigate }) {
             title="Open Interactive Global Network Map"
           >
             <Globe size={14} /> GLOBAL NETWORK MAP
+          </button>
+          <button 
+            className="sc-badge-active" 
+            onClick={() => handleNav('map-routing')} 
+            style={{ cursor: 'pointer', borderColor: '#0284c7', color: '#38bdf8' }}
+            title="Open Interactive Multimodal Route Visualizer"
+          >
+            <Navigation size={14} /> ROUTE VISUALIZER
           </button>
           <button 
             className="sc-badge-active" 

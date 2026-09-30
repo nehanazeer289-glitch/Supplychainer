@@ -1,96 +1,23 @@
 /**
  * LeafletMap.jsx
  * 
- * Standalone zero-npm-dependency Leaflet map component.
- * Dynamically loads Leaflet CSS & JS from unpkg CDN at runtime.
+ * Standalone Leaflet map component with reliable local npm bundling.
+ * Uses Esri Dark Gray Canvas tiles (no API key required).
  * Handles lifecycle cleanly: prevents duplicate initializations and cleans up on unmount.
  */
 
 import React, { useEffect, useRef, useState } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { HUB_TYPE_META, MODE_COLORS, isValidCoordinate } from './mapDataService.js';
 
-const LEAFLET_CDN_JS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-const LEAFLET_CDN_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-
-/**
- * Custom hook to dynamically load Leaflet assets if not already on window.
- */
-function useLeafletLoader() {
-  const [status, setStatus] = useState(() => {
-    return typeof window !== 'undefined' && window.L ? 'ready' : 'loading';
-  });
-  const [errorMessage, setErrorMessage] = useState(null);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    if (window.L) {
-      setStatus('ready');
-      return;
-    }
-
-    let isMounted = true;
-    const timeoutId = setTimeout(() => {
-      if (isMounted && !window.L) {
-        setStatus('error');
-        setErrorMessage('Leaflet CDN request timed out after 12 seconds. Check internet connectivity.');
-      }
-    }, 12000);
-
-    // 1. Inject Leaflet CSS if not already present
-    if (!document.querySelector(`link[href="${LEAFLET_CDN_CSS}"]`)) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = LEAFLET_CDN_CSS;
-      link.crossOrigin = '';
-      document.head.appendChild(link);
-    }
-
-    // 2. Inject Leaflet JS if not already present
-    const existingScript = document.querySelector(`script[src="${LEAFLET_CDN_JS}"]`);
-    if (existingScript) {
-      existingScript.addEventListener('load', () => {
-        clearTimeout(timeoutId);
-        if (isMounted) setStatus('ready');
-      });
-      existingScript.addEventListener('error', () => {
-        clearTimeout(timeoutId);
-        if (isMounted) {
-          setStatus('error');
-          setErrorMessage('Failed to load Leaflet script from CDN.');
-        }
-      });
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = LEAFLET_CDN_JS;
-    script.async = true;
-    script.crossOrigin = '';
-
-    script.onload = () => {
-      clearTimeout(timeoutId);
-      if (isMounted) setStatus('ready');
-    };
-
-    script.onerror = () => {
-      clearTimeout(timeoutId);
-      if (isMounted) {
-        setStatus('error');
-        setErrorMessage('Failed to connect to Leaflet CDN (unpkg.com). Please check network or firewall settings.');
-      }
-    };
-
-    document.head.appendChild(script);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timeoutId);
-    };
-  }, []);
-
-  return { status, errorMessage };
-}
+// Configure Leaflet standard default icon assets safely
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
 
 export default function LeafletMap({
   hubs = [],
@@ -113,12 +40,11 @@ export default function LeafletMap({
   const routeLayerRef = useRef(null);
   const threatsLayerRef = useRef(null);
 
-  const { status: cdnStatus, errorMessage: cdnError } = useLeafletLoader();
   const [initError, setInitError] = useState(null);
 
-  // 1. Initialize Map Instance once Leaflet is ready
+  // 1. Initialize Map Instance
   useEffect(() => {
-    if (cdnStatus !== 'ready' || !mapContainerRef.current) return;
+    if (!mapContainerRef.current) return;
 
     // Prevent duplicate map initialization on hot reloads / re-renders
     if (mapInstanceRef.current || mapContainerRef.current._leaflet_id) {
@@ -126,12 +52,11 @@ export default function LeafletMap({
     }
 
     try {
-      const L = window.L;
       // Initialize map with neutral dark world view
       const map = L.map(mapContainerRef.current, {
-        center: [20, 0],
-        zoom: 2,
-        minZoom: 1.8,
+        center: [22, 12],
+        zoom: 2.5,
+        minZoom: 2,
         maxZoom: 18,
         worldCopyJump: true,
         zoomControl: false
@@ -140,11 +65,18 @@ export default function LeafletMap({
       // Add zoom control at bottom-right
       L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-      // CartoDB Dark Matter tile layer for dark theme
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        subdomains: 'abcd',
-        maxZoom: 19
+      // Reliable Leaflet-compatible dark tile provider that does NOT require an API key
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '&copy; <a href="https://www.esri.com/">Esri</a> &mdash; Esri, DeLorme, NAVTEQ',
+        maxZoom: 16,
+        minZoom: 2
+      }).addTo(map);
+
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '',
+        maxZoom: 16,
+        minZoom: 2,
+        opacity: 0.45
       }).addTo(map);
 
       // Create managed layer groups
@@ -154,6 +86,25 @@ export default function LeafletMap({
       threatsLayerRef.current = L.layerGroup().addTo(map);
 
       mapInstanceRef.current = map;
+
+      // Invalidate size once DOM stabilizes
+      const resizeTimer = setTimeout(() => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+        }
+      }, 150);
+
+      const handleResize = () => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+        }
+      };
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        clearTimeout(resizeTimer);
+        window.removeEventListener('resize', handleResize);
+      };
     } catch (err) {
       console.error('[LeafletMap] Map creation error:', err);
       setInitError(err.message);
@@ -170,13 +121,12 @@ export default function LeafletMap({
         mapInstanceRef.current = null;
       }
     };
-  }, [cdnStatus]);
+  }, []);
 
   // 2. Render Corridors Layer
   useEffect(() => {
     const map = mapInstanceRef.current;
-    const L = window.L;
-    if (!map || !L || !corridorsLayerRef.current) return;
+    if (!map || !corridorsLayerRef.current) return;
 
     corridorsLayerRef.current.clearLayers();
 
@@ -195,11 +145,11 @@ export default function LeafletMap({
       let color = '#475569'; // Slate default
 
       if (mode === 'SEA') {
-        color = '#1e3a8a'; // Deep Navy
+        color = '#0284c7'; // Sea Cyan/Blue
         dashArray = '5, 5';
         opacity = 0.3;
       } else if (mode === 'AIR') {
-        color = '#0284c7'; // Sky
+        color = '#38bdf8'; // Sky
         dashArray = '2, 6';
         opacity = 0.25;
       } else if (mode === 'RAIL') {
@@ -217,13 +167,12 @@ export default function LeafletMap({
 
       corridorsLayerRef.current.addLayer(polyline);
     }
-  }, [corridors, showCorridors, cdnStatus]);
+  }, [corridors, showCorridors]);
 
   // 3. Render Hubs & Threat Indicators
   useEffect(() => {
     const map = mapInstanceRef.current;
-    const L = window.L;
-    if (!map || !L || !hubsLayerRef.current || !threatsLayerRef.current) return;
+    if (!map || !hubsLayerRef.current || !threatsLayerRef.current) return;
 
     hubsLayerRef.current.clearLayers();
     threatsLayerRef.current.clearLayers();
@@ -341,13 +290,12 @@ export default function LeafletMap({
         console.warn('[LeafletMap] fitBounds error:', e);
       }
     }
-  }, [hubs, activeDisruptions, showHubs, cdnStatus, onSelectOrigin, onSelectDestination]);
+  }, [hubs, activeDisruptions, showHubs, onSelectOrigin, onSelectDestination]);
 
   // 4. Render Active Route Layer
   useEffect(() => {
     const map = mapInstanceRef.current;
-    const L = window.L;
-    if (!map || !L || !routeLayerRef.current) return;
+    if (!map || !routeLayerRef.current) return;
 
     routeLayerRef.current.clearLayers();
 
@@ -357,7 +305,7 @@ export default function LeafletMap({
 
     // A. Draw Transit Leg Polylines
     for (const seg of segments) {
-      const { coords, mode, color, fromName, toName, eta, cost, threat, type } = seg;
+      const { coords, mode, color, fromName, toName, eta, cost } = seg;
       if (!isValidCoordinate(coords[0][0], coords[0][1]) || !isValidCoordinate(coords[1][0], coords[1][1])) {
         continue;
       }
@@ -395,7 +343,7 @@ export default function LeafletMap({
 
     // B. Draw Transfer Points (Modal Handoffs)
     for (const tp of transferPoints) {
-      const { coords, name, mode, eta, cost } = tp;
+      const { coords, name, eta, cost } = tp;
       if (!isValidCoordinate(coords[0], coords[1])) continue;
 
       const transferMarker = L.circleMarker(coords, {
@@ -433,18 +381,15 @@ export default function LeafletMap({
         console.warn('[LeafletMap] Route fitBounds error:', e);
       }
     }
-  }, [routeData, cdnStatus, onSelectLeg]);
+  }, [routeData, onSelectLeg]);
 
   // Loading / Error states
-  if (cdnStatus === 'error' || initError) {
+  if (initError) {
     return (
       <div className="sc-map-overlay-center">
         <div className="sc-map-error-card">
-          <h3 style={{ margin: '0 0 0.5rem 0', color: '#f87171' }}>Map Visualization Unavailable</h3>
-          <p>{cdnError || initError}</p>
-          <div style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: '#94a3b8' }}>
-            Verify connection to <code>unpkg.com/leaflet</code> or enable web script access in your browser.
-          </div>
+          <h3 style={{ margin: '0 0 0.5rem 0', color: '#f87171' }}>Map Initialization Error</h3>
+          <p>{initError}</p>
         </div>
       </div>
     );
@@ -452,15 +397,7 @@ export default function LeafletMap({
 
   return (
     <div className="sc-map-main-wrapper">
-      {cdnStatus === 'loading' && (
-        <div className="sc-map-overlay-center">
-          <div className="sc-map-spinner" />
-          <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
-            Initializing Global Logistics GIS Layer...
-          </div>
-        </div>
-      )}
-      <div ref={mapContainerRef} className="sc-map-container" />
+      <div ref={mapContainerRef} className="sc-map-container" style={{ width: '100%', height: '100%', minHeight: '480px' }} />
     </div>
   );
 }

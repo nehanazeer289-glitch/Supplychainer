@@ -119,6 +119,14 @@ const RouteRecommender = ({ onNavigate }) => {
           </button>
           <button 
             className="sc-badge-active" 
+            onClick={() => onNavigate('map-routing')} 
+            style={{cursor: 'pointer', borderColor: '#0284c7', color: '#38bdf8'}}
+            title="Open Interactive Multimodal Route Visualizer"
+          >
+            <Navigation size={14} /> ROUTE VISUALIZER
+          </button>
+          <button 
+            className="sc-badge-active" 
             onClick={() => onNavigate('suppliers')} 
             style={{cursor: 'pointer', borderColor: '#8b5cf6', color: '#8b5cf6'}}
             title="Open Supplier Intelligence Audit"
@@ -199,7 +207,7 @@ const RouteRecommender = ({ onNavigate }) => {
           <label className="sc-label">Operational Configuration (NEW)</label>
           <select value={operationalConfig} onChange={e => setOperationalConfig(e.target.value)} className="sc-select" style={{borderColor: operationalConfig !== 'NORMAL' ? '#ef4444' : '#1e293b'}}>
             <option value="NORMAL">Operational Normal</option>
-            {scenarios.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            {scenarios.map(s => <option key={s.id} value={s.id}>{s.name} ({s.id})</option>)}
           </select>
         </div>
 
@@ -207,6 +215,35 @@ const RouteRecommender = ({ onNavigate }) => {
           <label className="sc-label">Strategic Overrides</label>
           <div style={{background: 'rgba(59, 130, 246, 0.05)', padding: '0.75rem', borderRadius: '8px', border: '1px solid #1e293b', fontSize: '0.75rem', color: '#64748b'}}>
             Auto-bypass enabled for verified chokepoints.
+          </div>
+        </div>
+
+        {/* Quick Corridor Presets for Instant Validation */}
+        <div style={{ marginBottom: '1rem' }}>
+          <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700, marginBottom: '0.4rem' }}>QUICK PRESET CORRIDORS:</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+            <button 
+              type="button" 
+              onClick={() => {
+                setSource('PORT-SHANGHAI');
+                setDestination('PORT-ROTTERDAM');
+                setSearchQuery({ source: 'Port of Shanghai', dest: 'Port of Rotterdam' });
+              }}
+              style={{ background: '#1e293b', border: '1px solid #334155', color: '#cbd5e1', padding: '0.35rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', textAlign: 'left', cursor: 'pointer' }}
+            >
+              🇨🇳 Shanghai &rarr; 🇳🇱 Rotterdam (Maritime)
+            </button>
+            <button 
+              type="button" 
+              onClick={() => {
+                setSource('HUB-SFO');
+                setDestination('PORT-ROTTERDAM');
+                setSearchQuery({ source: 'San Francisco Hub', dest: 'Port of Rotterdam' });
+              }}
+              style={{ background: '#1e293b', border: '1px solid #334155', color: '#cbd5e1', padding: '0.35rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', textAlign: 'left', cursor: 'pointer' }}
+            >
+              🇺🇸 San Francisco &rarr; 🇳🇱 Rotterdam (Multimodal)
+            </button>
           </div>
         </div>
 
@@ -221,7 +258,7 @@ const RouteRecommender = ({ onNavigate }) => {
           <div className="scenario-banner animate-slide-in">
             <AlertTriangle size={20} />
             <div>
-              <span style={{fontWeight: 800, fontSize: '0.75rem', display: 'block'}}>ACTIVE GLOBAL DISRUPTION DETECTED</span>
+              <span style={{fontWeight: 800, fontSize: '0.75rem', display: 'block'}}>ACTIVE GLOBAL DISRUPTION DETECTED: {operationalConfig}</span>
               <span style={{fontSize: '0.875rem'}}>{(scenarios.find(s => s.id === operationalConfig)?.name) || operationalConfig} logic active in unified solver.</span>
             </div>
           </div>
@@ -274,6 +311,34 @@ const RouteRecommender = ({ onNavigate }) => {
                    <span style={{color: '#64748b'}}>TOTAL COST</span>
                    <span style={{color: '#10b981'}}>${rec.total_cost.toLocaleString()}</span>
                  </div>
+                 <button
+                   className="sc-btn-map"
+                   style={{
+                     marginTop: '0.75rem',
+                     padding: '0.45rem 0.75rem',
+                     fontSize: '0.72rem',
+                     fontWeight: 700,
+                     background: 'rgba(37, 99, 235, 0.15)',
+                     border: '1px solid #3b82f6',
+                     color: '#60a5fa',
+                     cursor: 'pointer',
+                     display: 'flex',
+                     alignItems: 'center',
+                     justifyContent: 'center',
+                     gap: '6px',
+                     width: '100%',
+                     borderRadius: '6px',
+                     transition: 'all 0.15s ease'
+                   }}
+                   onClick={() => onNavigate('map-routing', {
+                     recommendations,
+                     selectedPersona: rec.persona,
+                     scenario: operationalConfig
+                   })}
+                   title={`Visualize ${rec.persona} route and all transfer points on the interactive map`}
+                 >
+                   <Globe size={13} /> VISUALIZE {rec.persona} ROUTE ON MAP
+                 </button>
               </div>
             </div>
           ))}

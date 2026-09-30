@@ -92,7 +92,7 @@ export default function MapRoutingView({
       } catch (err) {
         if (isMounted) {
           console.error('[MapRoutingView] Initialization error:', err);
-          setError(`Data Loading Failed: ${err.message}. Ensure backend is active at http://localhost:8000.`);
+          setError(`Data Loading Failed: ${err.message}. Ensure backend is running.`);
         }
       } finally {
         if (isMounted) setLoadingHubs(false);
@@ -205,14 +205,26 @@ export default function MapRoutingView({
           )}
 
           {onNavigate && (
-            <button 
-              className="sc-map-toggle-btn"
-              onClick={() => onNavigate('recommend')}
-              style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
-            >
-              <span>Back to Recommender</span>
-              <ChevronRight size={14} />
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button 
+                className="sc-map-toggle-btn"
+                onClick={() => onNavigate('network')}
+                style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', borderColor: '#3b82f6', color: '#38bdf8' }}
+                title="Switch to Global Network Topology View"
+              >
+                <Globe size={13} />
+                <span>Global Topology</span>
+              </button>
+              <button 
+                className="sc-map-toggle-btn"
+                onClick={() => onNavigate('recommend')}
+                style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+                title="Return to Route Command Console"
+              >
+                <span>Command Console</span>
+                <ChevronRight size={13} />
+              </button>
+            </div>
           )}
         </div>
       </header>
@@ -268,9 +280,9 @@ export default function MapRoutingView({
             disabled={loadingRoute}
             style={{ borderColor: activeScenarioId !== 'NORMAL' ? '#ef4444' : '#1e293b' }}
           >
-            <option value="NORMAL">Scenario: Normal Operations</option>
+            <option value="NORMAL">Operational Normal</option>
             {scenarios.map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
+              <option key={s.id} value={s.id}>{s.name} ({s.id})</option>
             ))}
           </select>
 

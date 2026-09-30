@@ -108,9 +108,30 @@ const RouteRecommender = ({ onNavigate }) => {
             <p style={{fontSize: '0.7rem', color: '#64748b', fontWeight: 700}}>UNIFIED MULTIMODAL DECISION SUPERIORITY ENGINE</p>
           </div>
         </div>
-        <div style={{display: 'flex', gap: '1rem'}}>
-          <button className="sc-badge-active" onClick={() => onNavigate('suppliers')} style={{cursor: 'pointer'}}>
+        <div style={{display: 'flex', gap: '0.75rem', alignItems: 'center'}}>
+          <button 
+            className="sc-badge-active" 
+            onClick={() => onNavigate('network')} 
+            style={{cursor: 'pointer', borderColor: '#3b82f6', color: '#3b82f6'}}
+            title="Open Interactive Global Network Map"
+          >
+            <Globe size={14} /> GLOBAL NETWORK MAP
+          </button>
+          <button 
+            className="sc-badge-active" 
+            onClick={() => onNavigate('suppliers')} 
+            style={{cursor: 'pointer', borderColor: '#8b5cf6', color: '#8b5cf6'}}
+            title="Open Supplier Intelligence Audit"
+          >
             <ShieldCheck size={14} /> SUPPLIER INTELLIGENCE
+          </button>
+          <button 
+            className="sc-badge-active" 
+            onClick={() => onNavigate('benchmark')} 
+            style={{cursor: 'pointer', borderColor: '#10b981', color: '#10b981'}}
+            title="Open Scientific Benchmarks"
+          >
+            <BarChart3 size={14} /> BENCHMARKS
           </button>
         </div>
       </header>

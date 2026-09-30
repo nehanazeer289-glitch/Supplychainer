@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Shield, AlertTriangle, Clock, TrendingUp, Info, 
-  BarChart3, Package, Truck, Database, Activity, CheckCircle2, ShieldAlert, Zap
+  BarChart3, Package, Truck, Database, Activity, CheckCircle2, ShieldAlert, Zap, Globe
 } from 'lucide-react';
 
 export default function SupplierIntelligence({ onNavigate }) {
@@ -61,8 +61,29 @@ export default function SupplierIntelligence({ onNavigate }) {
           </h2>
           <p className="sc-subtitle">Strategic Sourcing Decision Matrix</p>
         </div>
-        <div style={{display: 'flex', gap: '1rem'}}>
-          <button className="sc-badge-active" style={{cursor: 'pointer', borderColor: '#8b5cf6', color: '#8b5cf6'}} onClick={() => onNavigate('recommend')}>
+        <div style={{display: 'flex', gap: '0.65rem', alignItems: 'center', flexWrap: 'wrap'}}>
+          <button 
+            className="sc-badge-active" 
+            style={{cursor: 'pointer', borderColor: '#3b82f6', color: '#3b82f6'}} 
+            onClick={() => onNavigate('network')}
+            title="Open Interactive Global Network Map"
+          >
+            <Globe size={14} /> Global Network Map
+          </button>
+          <button 
+            className="sc-badge-active" 
+            style={{cursor: 'pointer', borderColor: '#10b981', color: '#10b981'}} 
+            onClick={() => onNavigate('benchmark')}
+            title="Open Scientific Decision Benchmarks"
+          >
+            <BarChart3 size={14} /> Benchmarks
+          </button>
+          <button 
+            className="sc-badge-active" 
+            style={{cursor: 'pointer', borderColor: 'var(--border-slate)', color: 'var(--text-main)'}} 
+            onClick={() => onNavigate('recommend')}
+            title="Return to Route Optimization Console"
+          >
             Route Recommender
           </button>
         </div>
